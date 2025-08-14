@@ -48,13 +48,12 @@
             <div class="flex-1">
               <h2 class="text-xl font-bold text-gray-900">{{ user.username || 'Anonymous User' }}</h2>
                 <div class="flex items-center gap-2">
-                  <span class="text-sm text-gray-600">Gender Guess:</span>
+                  <span class="text-sm text-gray-600">Guessed:</span>
                   <span class="px-2 py-1 rounded-full text-sm font-medium flex items-center gap-1" 
                         :class="user.gender === 'boy' ? 'bg-blue-100 text-blue-700' : user.gender === 'girl' ? 'bg-pink-100 text-pink-700' : 'bg-gray-100 text-gray-700'">
-                    <i v-if="user.gender === 'boy'" data-lucide="user" class="w-4 h-4"></i>
-                    <i v-else-if="user.gender === 'girl'" data-lucide="user-check" class="w-4 h-4"></i>
+                    <i v-if="user.gender === 'boy'" data-lucide="mars" class="w-4 h-4"></i>
+                    <i v-else-if="user.gender === 'girl'" data-lucide="venus" class="w-4 h-4"></i>
                     <i v-else data-lucide="help-circle" class="w-4 h-4"></i>
-                    {{ user.gender ? (user.gender.charAt(0).toUpperCase() + user.gender.slice(1)) : 'Not specified' }}
                   </span>
                 </div>
                 <div class="text-sm text-gray-500">

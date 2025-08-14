@@ -7,6 +7,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body class="bg-gray-100 min-h-screen">
   <div id="app" class="w-full max-w-2xl mx-auto p-2 sm:p-4">
@@ -55,8 +56,9 @@
                 </td>
                 <td class="border border-gray-300 p-2">
                   <div class="flex gap-1">
-                    <button @click="editUser(user)" class="bg-yellow-400 text-white px-2 py-1 rounded text-sm">Edit</button>
-                    <!-- Delete button removed from here -->
+                    <button @click="editUser(user)" class="bg-yellow-400 hover:bg-yellow-500 text-white p-2 rounded text-sm transition-colors">
+                      <i data-lucide="edit" class="w-4 h-4"></i>
+                    </button>
                   </div>
                 </td>
               </tr>
@@ -110,11 +112,20 @@
           </div>
         </div>
         <div class="flex gap-2 mt-4">
-          <button @click="updateUser" class="bg-blue-500 text-white px-4 py-2 rounded w-full">Save</button>
-          <button @click="editingUser = null" class="bg-gray-300 px-4 py-2 rounded w-full">Cancel</button>
-          <button @click="deleteUser(editingUser.id)" class="bg-red-500 text-white px-4 py-2 rounded w-full">Delete</button>
+          <button @click="updateUser" class="bg-blue-500 hover:bg-blue-600 text-white p-3 rounded flex items-center justify-center transition-colors">
+            <i data-lucide="save" class="w-5 h-5"></i>
+          </button>
+          <button @click="editingUser = null" class="bg-gray-300 hover:bg-gray-400 text-gray-700 p-3 rounded flex items-center justify-center transition-colors">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+          <button @click="deleteUser(editingUser.id)" class="bg-red-500 hover:bg-red-600 text-white p-3 rounded flex items-center justify-center transition-colors">
+            <i data-lucide="trash-2" class="w-5 h-5"></i>
+          </button>
         </div>
-        <button @click="resetGender(editingUser.id)" class="bg-yellow-500 text-white px-4 py-2 rounded w-full mt-4">Reset Gender</button>
+        <button @click="resetGender(editingUser.id)" class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded w-full mt-4 flex items-center justify-center gap-2 transition-colors">
+          <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+          Reset Gender
+        </button>
       </div>
     </div>
   </div>
@@ -267,6 +278,16 @@
       },
       mounted() {
         this.fetchUsers();
+        // Render Lucide icons after mount
+        this.$nextTick(() => {
+          if (window.lucide) window.lucide.createIcons();
+        });
+      },
+      updated() {
+        // Re-render icons after updates
+        this.$nextTick(() => {
+          if (window.lucide) window.lucide.createIcons();
+        });
       }
     }).mount("#app");
   </script>
