@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gender Reveal Admin</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+</head>
+
+<body class="bg-gray-100 min-h-screen">
+  <div id="app" class="w-full max-w-2xl mx-auto p-2 sm:p-4 pb-24">
+    <div class="bg-white rounded-xl shadow p-4 sm:p-6 space-y-4">
+      <!-- header -->
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="h-10 w-10 rounded-full bg-gradient-to-br from-pink-400 to-indigo-500 flex items-center justify-center text-white text-lg">🎉
+          </div>
+          <div>
+            <h1 class="text-lg sm:text-2xl font-bold leading-tight">Dashboard</h1>
+            <div class="text-xs text-gray-500">Admin panel</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stats card -->
+      <div class="p-3 bg-gradient-to-r from-white via-slate-50 to-white border rounded-lg">
+        <div class="flex items-center justify-between">
+          <div>
+            <div class="text-sm font-semibold text-gray-700">Guess Statistics</div>
+            <div class="text-xs text-gray-500">Tap a stat to view details</div>
+          </div>
+        </div>
+        <div class="mt-3 space-y-3">
+          <button
+            class="w-full flex items-center justify-between gap-4 p-3 rounded-md bg-blue-50 hover:bg-blue-100">
+            <div class="flex items-center gap-3">
+              <div>
+                <div class="text-sm font-medium text-blue-700">Boy</div>
+                <div class="text-xs text-gray-500">Current guesses</div>
+              </div>
+            </div>
+            <div class="text-lg font-bold text-blue-600">{{ stats.boy }}%</div>
+          </button>
+
+          <button
+            class="w-full flex items-center justify-between gap-4 p-3 rounded-md bg-pink-50 hover:bg-pink-100">
+            <div class="flex items-center gap-3">
+              <div>
+                <div class="text-sm font-medium text-pink-700">Girl</div>
+                <div class="text-xs text-gray-500">Current guesses</div>
+              </div>
+            </div>
+            <div class="text-lg font-bold text-pink-600">{{ stats.girl }}%</div>
+          </button>
+        </div>
+      </div>
+
+      <!-- Videos card -->
+      <div class="p-3 border rounded-lg">
+        <div class="flex items-center justify-between">
+          <div>
+            <div class="text-sm font-semibold text-gray-700">Reaction Videos</div>
+            <div class="text-xs text-gray-500">Download or preview</div>
+          </div>
+        </div>
+        <div class="mt-3 space-y-3">
+          <div v-if="videos.length" class="space-y-2">
+            <div v-for="video in videos" :key="video.id"
+              class="flex items-center justify-between gap-3 p-3 bg-white rounded-md shadow-sm">
+              <div class="flex items-center gap-3">
+                <div class="h-12 w-12 bg-gray-100 rounded-md flex items-center justify-center text-xl">🎬</div>
+                <div class="text-sm font-medium truncate">{{ video.name }}</div>
+              </div>
+              <div class="flex items-center gap-2">
+                <a :href="video.url" download
+                  class="inline-flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white px-3 py-2 rounded-md text-sm">
+                  Download
+                </a>
+              </div>
+            </div>
+          </div>
+          <div v-else class="text-gray-500 text-sm">No videos available</div>
+        </div>
+      </div>
+
+      <!-- Quick actions (desktop) - hidden on small screens -->
+      <div class="hidden sm:flex gap-2">
+        <a href="/reading/html/13-gender-reveal/admin/users.html"
+          class="flex-1 text-center bg-indigo-600 text-white py-3 rounded-lg font-semibold">Manage Users</a>
+        <button @click="logout"
+          class="flex-1 text-center bg-red-100 text-red-600 py-3 rounded-lg font-semibold">Logout</button>
+      </div>
+
+    </div>
+
+    <!-- Mobile bottom nav (fixed) -->
+    <nav class="fixed bottom-0 left-0 right-0 bg-white border-t p-3 sm:hidden shadow-xl">
+      <div class="max-w-2xl mx-auto flex gap-3">
+        <a href="/reading/html/13-gender-reveal/admin/users.html" class="flex-1 inline-flex items-center justify-center gap-2 bg-indigo-600 text-white py-3 rounded-lg font-semibold">
+          👥 Manage
+        </a>
+        <button @click="logout" class="flex-1 inline-flex items-center justify-center gap-2 bg-red-50 text-red-600 py-3 rounded-lg font-semibold">
+          ⏏️ Logout
+        </button>
+      </div>
+    </nav>
+
+  </div>
+
+  <script>
+    const { createApp } = Vue;
+    // Initialize Supabase client with a unique variable name
+    const SUPABASE_URL = "https://ojgmqxidefvwxhkgkwbr.supabase.co";
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9qZ21xeGlkZWZ2d3hoa2drd2JyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUxNzA1MTEsImV4cCI6MjA3MDc0NjUxMX0.D73zLIQvXzQ-pofnkVPpci-Q5J97WZ06MWsI6mL9bcM';
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    createApp({
+      data() {
+        return {
+          stats: { boy: 60, girl: 40 },
+          videos: [
+            { id: 1, name: 'User1.mp4', url: '#' },
+            { id: 2, name: 'User2.mp4', url: '#' }
+          ]
+        }
+      },
+      methods: {
+        logout() {
+          localStorage.removeItem('admin_logged_in');
+          window.location.href = '/reading/html/13-gender-reveal/admin/login.html';
+        }
+      },
+      mounted() {
+        // require login (set by login.html)
+        if (!localStorage.getItem('admin_logged_in')) {
+          window.location.href = '/reading/html/13-gender-reveal/admin/login.html';
+        }
+      }
+    }).mount('#app');
+  </script>
+</body>
+
+</html>

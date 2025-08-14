@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Login</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+  <div id="app" class="w-full max-w-2xl mx-auto p-2 sm:p-4 bg-white rounded-xl shadow-lg">
+    <div class="flex flex-col items-center space-y-6 w-full px-2 sm:px-0">
+      <div class="text-2xl font-bold">Admin Login</div>
+      <input v-model="username" type="text" placeholder="Username" class="w-full max-w-md p-3 border rounded-lg" />
+      <input v-model="password" type="password" placeholder="Password" class="w-full max-w-md p-3 border rounded-lg" />
+      <button @click="login" class="w-full max-w-md py-3 bg-blue-500 text-white rounded-lg text-xl font-bold">Login</button>
+    </div>
+  </div>
+
+  <script>
+    const { createApp } = Vue;
+    const SUPABASE_URL = "https://ojgmqxidefvwxhkgkwbr.supabase.co";
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9qZ21xeGlkZWZ2d3hoa2drd2JyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUxNzA1MTEsImV4cCI6MjA3MDc0NjUxMX0.D73zLIQvXzQ-pofnkVPpci-Q5J97WZ06MWsI6mL9bcM';
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    createApp({
+      data() {
+        return {
+          username: '',
+          password: ''
+        }
+      },
+      methods: {
+        async login() {
+          if (!this.username || !this.password) {
+            alert('Please enter username and password');
+            return;
+          }
+          const { data, error } = await supabaseClient
+            .from('users')
+            .select('*')
+            .eq('username', this.username)
+            .eq('password', this.password)
+            .eq('role', 'admin')
+            .single();
+          if (data) {
+            localStorage.setItem('admin_logged_in', this.username);
+            window.location.href = '/reading/html/13-gender-reveal/admin/index.html';
+          } else {
+            alert('Invalid credentials or not an admin');
+          }
+        }
+      }
+    }).mount('#app');
+  </script>
+</body>
+</html>

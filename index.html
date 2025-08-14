@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gender Reveal App</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+</head>
+
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+  <div id="app" class="w-full max-w-md mx-auto p-4 bg-white rounded-xl shadow-lg">
+    <!-- Upload feedback banner -->
+    <div v-if="uploadSuccess" class="mb-3 p-3 rounded-lg bg-green-50 border border-green-200 text-green-800 flex items-center justify-between">
+      <div>
+        <strong class="block">Upload successful</strong>
+        <a :href="uploadedUrl" target="_blank" class="underline text-sm">View uploaded video</a>
+      </div>
+      <button @click="uploadSuccess = false" class="ml-4 text-sm px-2 py-1 bg-green-100 rounded">Dismiss</button>
+    </div>
+
+    <!-- Uploading indicator -->
+    <div v-if="uploadLoading" class="mb-3 p-2 rounded-lg bg-yellow-50 border border-yellow-200 text-yellow-800 flex items-center gap-3">
+      <svg class="h-5 w-5 animate-spin text-yellow-600" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-opacity="0.25" stroke-width="4"></circle>
+        <path d="M22 12a10 10 0 00-10-10" stroke="currentColor" stroke-width="4" stroke-linecap="round"></path>
+      </svg>
+      <div class="text-sm">Uploading video…</div>
+    </div>
+
+    <!-- Countdown overlay (3..2..1) -->
+    <div v-if="showCountdown" class="absolute inset-0 bg-black/60 z-50 flex items-center justify-center pointer-events-none">
+      <div class="text-white text-6xl sm:text-8xl font-extrabold animate-pulse">
+        {{ countdown }}
+      </div>
+    </div>
+
+    <div v-if="step === 'permission'" class="flex flex-col items-center space-y-6">
+      <div class="text-4xl">📹 🎙</div>
+      <div class="text-lg font-semibold">We’ll record your reaction and voice during this fun reveal!</div>
+      <div class="text-sm text-gray-500">Recording will begin automatically after you allow camera access.</div>
+      <button @click="allowAndStart" class="w-full py-3 bg-blue-500 text-white rounded-lg text-xl font-bold">Allow &
+        Continue</button>
+    </div>
+    <div v-else-if="step === 'guess'" class="flex flex-col items-center space-y-6">
+      <div class="text-xl font-bold mt-8">Guess the baby's gender!</div>
+      <div class="flex w-full space-x-4 mt-4">
+        <button @click="choose('girl')"
+          class="flex-1 py-4 bg-pink-400 text-white rounded-lg text-lg font-bold">Girl</button>
+        <button @click="choose('boy')"
+          class="flex-1 py-4 bg-blue-400 text-white rounded-lg text-lg font-bold">Boy</button>
+      </div>
+    </div>
+    <div v-else-if="step === 'stats'" class="flex flex-col items-center space-y-6">
+      <div class="text-xl font-bold mt-8">Guesses so far</div>
+      <div class="flex w-full justify-around mt-4">
+        <div class="flex flex-col items-center">
+          <span class="text-blue-500 font-bold text-2xl">{{ stats.boy }}%</span>
+          <span class="text-sm">Boy</span>
+        </div>
+        <div class="flex flex-col items-center">
+          <span class="text-pink-500 font-bold text-2xl">{{ stats.girl }}%</span>
+          <span class="text-sm">Girl</span>
+        </div>
+      </div>
+      <button @click="nextStep" class="w-full py-3 bg-green-500 text-white rounded-lg text-xl font-bold mt-6">See
+        Reveal</button>
+    </div>
+    <div v-else-if="step === 'reveal'" class="flex flex-col items-center space-y-6">
+      <div class="relative w-full flex flex-col items-center mt-8">
+        <div v-if="reveal === 'girl'" class="text-pink-500 text-5xl font-bold mb-4">🎉 IT'S A GIRL!</div>
+        <div v-else class="text-blue-500 text-5xl font-bold mb-4">🎉 IT'S A BOY!</div>
+        <div class="w-full h-32 flex items-center justify-center">
+          <div v-if="reveal === 'girl'" class="w-full h-full bg-pink-200 rounded-lg animate-bounce"></div>
+          <div v-else class="w-full h-full bg-blue-200 rounded-lg animate-bounce"></div>
+        </div>
+      </div>
+      <button @click="finishAndUpload"
+        class="w-full py-3 bg-gray-800 text-white rounded-lg text-xl font-bold mt-6">Finish</button>
+    </div>
+    <div v-else-if="step === 'end'" class="flex flex-col items-center space-y-6">
+      <div class="text-3xl mt-8">🎊</div>
+      <div class="text-xl font-bold">Thanks for participating!</div>
+    </div>
+
+    <!-- persistent top-right cam: visible when stream is available -->
+    <div class="fixed top-4 right-4 z-50" v-show="stream">
+      <div class="flex flex-col items-center space-y-2">
+        <div id="camHolder" class="w-20 h-20 bg-gray-200 rounded-full overflow-hidden flex items-center justify-center shadow-lg">
+          <video id="miniCam" autoplay playsinline muted class="object-cover w-full h-full"></video>
+        </div>
+        <div class="text-xs text-gray-600 mt-1">{{ uploadStatus }}</div>
+      </div>
+    </div>
+  </div>
+  <script>
+    const { createApp } = Vue;
+    // Supabase config — reuse your project values
+    const SUPABASE_URL = "https://ojgmqxidefvwxhkgkwbr.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9qZ21xeGlkZWZ2d3hoa2drd2JyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUxNzA1MTEsImV4cCI6MjA3MDc0NjUxMX0.D73zLIQvXzQ-pofnkVPpci-Q5J97WZ06MWsI6mL9bcM";
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    createApp({
+      data() {
+        return {
+          step: 'permission',
+          stats: { boy: 60, girl: 40 },
+          reveal: 'girl',
+          // active MediaStream
+          stream: null,
+          // recording state
+          isRecording: false,
+          mediaRecorder: null,
+          videoChunks: [],
+          uploadStatus: '',
+          clientId: null,
+          // internal upload synchronization
+          _uploadDone: null,
+          _resolveUpload: null,
+          // upload feedback
+          uploadSuccess: false,
+          uploadedUrl: '',
+          uploadMessage: '',
+          uploadLoading: false,
+          // countdown state
+          showCountdown: false,
+          countdown: 3,
+        }
+      },
+      methods: {
+        nextStep() {
+          if (this.step === 'permission') this.step = 'guess';
+          else if (this.step === 'guess') this.step = 'stats';
+          else if (this.step === 'stats') this.step = 'reveal';
+          else if (this.step === 'reveal') this.step = 'end';
+        },
+        choose(gender) {
+          this.reveal = gender;
+          this.nextStep();
+        },
+        // Called when user clicks "Allow & Continue" — reuse stream if already granted on mount,
+        // otherwise request permission and then run countdown/start recording
+        async allowAndStart() {
+          try {
+            this.uploadStatus = 'Preparing camera…';
+            if (!this.stream) {
+              // request permission if not already granted on mount
+              this.stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+              // attach preview if miniCam already rendered
+              await this.$nextTick();
+              const mini = document.getElementById('miniCam');
+              if (mini) mini.srcObject = this.stream;
+            }
+            // start the visible 3..2..1 countdown before showing the guess screen
+            this.startCountdown(3);
+          } catch (err) {
+            console.error('Camera init error:', err);
+            this.uploadStatus = 'Camera permission denied or unavailable';
+          }
+        },
+
+        // run a numeric countdown (seconds) then show guess and start recording
+        startCountdown(seconds = 3) {
+          this.countdown = seconds;
+          this.showCountdown = true;
+          const tick = () => {
+            if (this.countdown > 1) {
+              this.countdown--;
+              setTimeout(tick, 1000);
+            } else {
+              // last tick -> hide overlay, show guess and start recording
+              this.showCountdown = false;
+              this.nextStep(); // move to 'guess'
+              this.$nextTick(() => {
+                const mini = document.getElementById('miniCam');
+                if (mini) mini.srcObject = this.stream;
+                // prepare recorder if not already
+                if (!this.mediaRecorder) {
+                  this.mediaRecorder = new MediaRecorder(this.stream, { mimeType: 'video/webm' });
+                  this.mediaRecorder.ondataavailable = (e) => { if (e.data && e.data.size) this.videoChunks.push(e.data); };
+                  this.mediaRecorder.onstop = () => this.uploadRecordedVideo();
+                }
+                this.startRecord();
+              });
+            }
+          };
+          // initial delay 1s then begin ticks so "3" appears for ~1s
+          setTimeout(tick, 1000);
+        },
+        async initCamera() {
+          try {
+            const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+            // set small cam preview
+            const miniCam = document.getElementById('miniCam');
+            if (miniCam) miniCam.srcObject = stream;
+            // prepare recorder but don't start yet
+            this.mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
+            this.mediaRecorder.ondataavailable = (e) => { if (e.data && e.data.size) this.videoChunks.push(e.data); };
+            this.mediaRecorder.onstop = () => this.uploadRecordedVideo();
+          } catch (err) {
+            console.error('Camera init error:', err);
+            this.uploadStatus = 'Camera unavailable';
+            throw err;
+          }
+        },
+        startRecord() {
+          if (!this.mediaRecorder) {
+            this.uploadStatus = 'Camera not initialized';
+            return;
+          }
+          this.videoChunks = [];
+          this.mediaRecorder.start();
+          this.isRecording = true;
+          this.uploadStatus = 'Recording…';
+        },
+        stopRecord() {
+          if (!this.mediaRecorder || !this.isRecording) return;
+          this.mediaRecorder.stop();
+          this.isRecording = false;
+          this.uploadStatus = 'Stopping…';
+        },
+        async uploadRecordedVideo() {
+          // create a promise so callers (finishAndUpload) can await upload completion
+          this.uploadStatus = 'Uploading…';
+          this.uploadLoading = true;
+          this._uploadDone = new Promise((resolve) => { this._resolveUpload = resolve; });
+          try {
+            const blob = new Blob(this.videoChunks, { type: 'video/webm' });
+            const timestamp = Date.now();
+            const idPart = this.clientId ? `${this.clientId}/` : '';
+            const fileName = `${idPart}${timestamp}.webm`;
+            const path = `recordings/${fileName}`;
+            const file = new File([blob], `${timestamp}.webm`, { type: 'video/webm' });
+            const res = await supabaseClient.storage.from('videos').upload(path, file, { upsert: false });
+            const error = res.error || (res?.data && res?.data?.error);
+            if (error) {
+              console.error('Upload error:', error, res);
+              this.uploadStatus = 'Upload failed: ' + (error.message || JSON.stringify(error));
+              this.uploadSuccess = false;
+              this.uploadMessage = this.uploadStatus;
+              this._resolveUpload && this._resolveUpload();
+              return;
+            }
+            const { data: pub } = supabaseClient.storage.from('videos').getPublicUrl(path);
+            this.uploadStatus = `Uploaded`;
+            this.uploadSuccess = true;
+            this.uploadedUrl = pub.publicUrl;
+            this.uploadMessage = 'Upload successful';
+            // auto-hide banner after 8s
+            setTimeout(() => { this.uploadSuccess = false; }, 8000);
+            this._resolveUpload && this._resolveUpload();
+          } catch (err) {
+            console.error('Upload exception:', err);
+            this.uploadStatus = 'Upload failed: ' + (err.message || JSON.stringify(err));
+            this.uploadSuccess = false;
+            this.uploadMessage = this.uploadStatus;
+            this._resolveUpload && this._resolveUpload();
+          } finally {
+            this.uploadLoading = false;
+            this._uploadDone = null;
+            this._resolveUpload = null;
+          }
+        },
+        // Called when the user presses Finish: stop recording if active, wait for upload, then proceed
+        async finishAndUpload() {
+          try {
+            if (this.isRecording && this.mediaRecorder) {
+              this.uploadStatus = 'Stopping and uploading…';
+              this.mediaRecorder.stop();
+              this.isRecording = false;
+              // wait for uploadRecordedVideo to finish (resolves _uploadDone)
+              if (this._uploadDone) await this._uploadDone;
+            } else if (this.videoChunks && this.videoChunks.length > 0) {
+              // no active recording but we have chunks — upload directly
+              await this.uploadRecordedVideo();
+            }
+          } catch (err) {
+            console.error('finishAndUpload error:', err);
+          } finally {
+            // advance UI
+            this.nextStep();
+            // release camera resources now that user finished
+            if (this.stream) {
+              try {
+                this.stream.getTracks().forEach(t => t.stop());
+              } catch (e) { /* ignore */ }
+              this.stream = null;
+              const mini = document.getElementById('miniCam');
+              if (mini) mini.srcObject = null;
+            }
+          }
+        },
+      },
+      async mounted() {
+        const params = new URLSearchParams(window.location.search);
+        const id = params.get('id');
+        if (id) {
+          console.log('id from URL:', id);
+          this.clientId = id;
+        } else {
+          console.log('no id parameter found in URL');
+        }
+        // Request permission on mount so user sees the prompt immediately,
+        // but don't start recording until they press Allow & Continue.
+        try {
+          this.uploadStatus = 'Requesting camera & mic permission…';
+          const s = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+          this.stream = s;
+          const mini = document.getElementById('miniCam');
+          if (mini) mini.srcObject = s;
+          this.uploadStatus = 'Camera ready';
+        } catch (err) {
+          console.warn('Permission on mount failed or was denied:', err);
+          this.uploadStatus = 'Camera permission not granted';
+        }
+      }
+    }).mount('#app');
+   </script>
+</body>
+
+</html>
