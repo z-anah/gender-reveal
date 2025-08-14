@@ -100,16 +100,54 @@
           <span class="text-sm">Girl</span>
         </div>
       </div>
-      <button @click="nextStep" class="w-full py-3 bg-green-500 text-white rounded-lg text-xl font-bold mt-6">See
-        Reveal</button>
+      <button @click="startSuspenseReveal" :disabled="suspenseActive" 
+              class="w-full py-3 bg-green-500 hover:bg-green-600 text-white rounded-lg text-xl font-bold mt-6 transition-colors disabled:opacity-50">
+        {{ suspenseActive ? 'Revealing...' : 'See Reveal' }}
+      </button>
+    </div>
+    <div v-else-if="step === 'suspense'" class="flex flex-col items-center space-y-6">
+      <div class="text-xl font-bold mt-8 text-center animate-pulse" 
+           :class="suspenseTextColor">{{ suspenseText }}</div>
+      
+      <!-- Drumroll indicator -->
+      <div v-if="showDrumroll" class="text-center animate-bounce">
+        <div class="text-4xl">🥁</div>
+        <div class="text-sm text-gray-500 mt-1">*drumroll*</div>
+      </div>
+      
+      <!-- Suspenseful options display -->
+      <div class="w-full space-y-4">
+        <div v-show="showBoyOption" 
+             class="w-full p-6 rounded-lg text-center transition-all duration-1000 transform"
+             :class="boyOptionActive ? 'bg-blue-100 border-2 border-blue-300 scale-105 shadow-lg animate-pulse' : 'bg-gray-100 opacity-30 scale-95'">
+          <div class="text-4xl mb-2">👦</div>
+          <div class="text-2xl font-bold text-blue-600">BOY?</div>
+          <div v-if="boyOptionActive" class="text-sm text-blue-500 mt-1 animate-pulse">Could it be?</div>
+        </div>
+        
+        <div v-show="showGirlOption" 
+             class="w-full p-6 rounded-lg text-center transition-all duration-1000 transform"
+             :class="girlOptionActive ? 'bg-pink-100 border-2 border-pink-300 scale-105 shadow-lg animate-pulse' : 'bg-gray-100 opacity-30 scale-95'">
+          <div class="text-4xl mb-2">👧</div>
+          <div class="text-2xl font-bold text-pink-600">GIRL?</div>
+          <div v-if="girlOptionActive" class="text-sm text-pink-500 mt-1 animate-pulse">Or maybe this?</div>
+        </div>
+      </div>
+      
+      <!-- Tension building elements -->
+      <div v-if="showTensionDots" class="flex justify-center space-x-2">
+        <div class="w-3 h-3 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0s;"></div>
+        <div class="w-3 h-3 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0.2s;"></div>
+        <div class="w-3 h-3 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0.4s;"></div>
+      </div>
     </div>
     <div v-else-if="step === 'reveal'" class="flex flex-col items-center space-y-6">
       <div class="relative w-full flex flex-col items-center mt-8">
-        <div v-if="reveal === 'girl'" class="text-pink-500 text-5xl font-bold mb-4">🎉 IT'S A GIRL!</div>
-        <div v-else class="text-blue-500 text-5xl font-bold mb-4">🎉 IT'S A BOY!</div>
-        <div class="w-full h-32 flex items-center justify-center">
-          <div v-if="reveal === 'girl'" class="w-full h-full bg-pink-200 rounded-lg animate-bounce"></div>
-          <div v-else class="w-full h-full bg-blue-200 rounded-lg animate-bounce"></div>
+        <div v-if="reveal === 'girl'" class="text-pink-500 text-4xl sm:text-6xl font-bold mb-4 animate-bounce">
+          🎉 IT'S A GIRL! 🎉
+        </div>
+        <div v-else class="text-blue-500 text-4xl sm:text-6xl font-bold mb-4 animate-bounce">
+          🎉 IT'S A BOY! 🎉
         </div>
       </div>
       <button @click="finishAndUpload"
@@ -145,6 +183,16 @@
           reveal: 'girl',
           chosenGender: null,
           choosingGender: false,
+          // suspense reveal state
+          suspenseActive: false,
+          suspenseText: '',
+          suspenseTextColor: 'text-gray-700',
+          showBoyOption: false,
+          showGirlOption: false,
+          boyOptionActive: false,
+          girlOptionActive: false,
+          showDrumroll: false,
+          showTensionDots: false,
           // active MediaStream
           stream: null,
           // recording state
@@ -170,8 +218,100 @@
         nextStep() {
           if (this.step === 'permission') this.step = 'guess';
           else if (this.step === 'guess') this.step = 'stats';
-          else if (this.step === 'stats') this.step = 'reveal';
+          else if (this.step === 'stats') this.step = 'suspense';
+          else if (this.step === 'suspense') this.step = 'reveal';
           else if (this.step === 'reveal') this.step = 'end';
+        },
+        async startSuspenseReveal() {
+          this.suspenseActive = true;
+          this.step = 'suspense';
+          
+          // Get actual reveal gender from settings
+          try {
+            const { data, error } = await supabaseClient.from('settings').select('gender').single();
+            if (data && data.gender) {
+              this.reveal = data.gender;
+            }
+          } catch (err) {
+            console.error('Error fetching reveal gender:', err);
+          }
+          
+          // Suspense sequence
+          await this.runSuspenseSequence();
+        },
+        
+        async runSuspenseSequence() {
+          // Step 1: Initial suspense building
+          this.suspenseText = "The moment you've all been waiting for...";
+          this.suspenseTextColor = 'text-gray-700';
+          await this.delay(2500);
+          
+          this.suspenseText = "Are you ready to find out?";
+          this.suspenseTextColor = 'text-purple-600';
+          await this.delay(2000);
+          
+          this.suspenseText = "Take a deep breath...";
+          this.suspenseTextColor = 'text-blue-600';
+          await this.delay(2000);
+          
+          // Step 2: Building more tension
+          this.suspenseText = "The baby is...";
+          this.suspenseTextColor = 'text-red-600';
+          this.showDrumroll = true;
+          await this.delay(3000);
+          
+          this.showDrumroll = false;
+          this.suspenseText = "Is it a...";
+          this.suspenseTextColor = 'text-gray-800';
+          await this.delay(1500);
+          
+          // Step 3: Show Boy option with more drama
+          this.suspenseText = "BOY?";
+          this.suspenseTextColor = 'text-blue-700';
+          this.showBoyOption = true;
+          this.boyOptionActive = true;
+          await this.delay(2500);
+          
+          this.suspenseText = "Hmm... or maybe not?";
+          this.suspenseTextColor = 'text-gray-600';
+          this.boyOptionActive = false;
+          await this.delay(1500);
+          
+          // Step 4: Show Girl option with suspense
+          this.suspenseText = "What about... a GIRL?";
+          this.suspenseTextColor = 'text-pink-700';
+          this.showGirlOption = true;
+          this.girlOptionActive = true;
+          await this.delay(2500);
+          
+          this.suspenseText = "Or... wait for it...";
+          this.suspenseTextColor = 'text-purple-600';
+          this.girlOptionActive = false;
+          await this.delay(1500);
+          
+          // Step 5: Final dramatic build-up
+          this.suspenseText = "The moment of truth is here!";
+          this.suspenseTextColor = 'text-red-700';
+          this.showTensionDots = true;
+          await this.delay(3000);
+          
+          this.suspenseText = "And the answer is...";
+          this.suspenseTextColor = 'text-black';
+          this.showTensionDots = false;
+          await this.delay(2000);
+          
+          // Reset all suspense elements before reveal
+          this.showBoyOption = false;
+          this.showGirlOption = false;
+          this.showDrumroll = false;
+          this.showTensionDots = false;
+          await this.delay(500);
+          
+          // Move to reveal
+          this.nextStep();
+        },
+        delay(ms) {
+          return new Promise(resolve => setTimeout(resolve, ms));
         },
         async choose(gender) {
           this.choosingGender = true;
