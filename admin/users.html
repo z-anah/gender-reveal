@@ -13,7 +13,7 @@
     <div class="bg-white rounded-xl shadow p-4 sm:p-6 space-y-4">
       <div class="flex items-center justify-between">
         <h1 class="text-2xl font-bold">User Management</h1>
-        <a href="/reading/html/13-gender-reveal/admin/index.html" class="text-blue-600 underline">Back</a>
+        <a href="/gender-reveal/admin/index.html" class="text-blue-600 underline">Back</a>
       </div>
 
       <form @submit.prevent="addUser" class="space-y-3">
@@ -56,7 +56,7 @@
                 <td class="border border-gray-300 p-2">
                   <div class="flex gap-1">
                     <button @click="editUser(user)" class="bg-yellow-400 text-white px-2 py-1 rounded text-sm">Edit</button>
-                    <button @click="deleteUser(user.id)" class="bg-red-500 text-white px-2 py-1 rounded text-sm">Delete</button>
+                    <!-- Delete button removed from here -->
                   </div>
                 </td>
               </tr>
@@ -72,22 +72,48 @@
       <div class="bg-white p-6 rounded shadow-lg w-full max-w-md">
         <div class="font-bold mb-4">Edit User</div>
         <div class="space-y-3">
-          <input v-model="editingUser.name" type="text" placeholder="Name" class="w-full p-2 border rounded" required />
-          <input v-model="editingUser.username" type="text" placeholder="Username" class="w-full p-2 border rounded" required />
-          <select v-model="editingUser.role" class="w-full p-2 border rounded" required>
-            <option value="">Select Role</option>
-            <option value="admin">Admin</option>
-            <option value="guest">Guest</option>
-          </select>
-          <div class="flex gap-2">
-            <input v-model="editingUser.unique_link" type="text" placeholder="Unique Link (optional)" class="w-full p-2 border rounded" />
-            <button @click.prevent="generateShortLink(true)" type="button" class="bg-gray-200 px-3 rounded">Generate</button>
+          <div>
+            <label class="block text-xs text-gray-500 mb-1">ID</label>
+            <input :value="editingUser.id" type="text" class="w-full p-2 border rounded bg-gray-100" readonly />
+          </div>
+          <div>
+            <label class="block text-xs text-gray-500 mb-1">Created At</label>
+            <input :value="formatDate(editingUser.created_at)" type="text" class="w-full p-2 border rounded bg-gray-100" readonly />
+          </div>
+          <div>
+            <label class="block text-xs text-gray-500 mb-1">Name</label>
+            <input v-model="editingUser.name" type="text" class="w-full p-2 border rounded" required />
+          </div>
+          <div>
+            <label class="block text-xs text-gray-500 mb-1">Username</label>
+            <input v-model="editingUser.username" type="text" class="w-full p-2 border rounded" required />
+          </div>
+          <div>
+            <label class="block text-xs text-gray-500 mb-1">Role</label>
+            <select v-model="editingUser.role" class="w-full p-2 border rounded" required>
+              <option value="">Select Role</option>
+              <option value="admin">Admin</option>
+              <option value="guest">Guest</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs text-gray-500 mb-1">Gender</label>
+            <input :value="editingUser.gender || '-'" type="text" class="w-full p-2 border rounded bg-gray-100" readonly />
+          </div>
+          <div>
+            <label class="block text-xs text-gray-500 mb-1">Unique Link</label>
+            <div class="flex gap-2">
+              <input v-model="editingUser.unique_link" type="text" class="w-full p-2 border rounded" />
+              <button @click.prevent="generateShortLink(true)" type="button" class="bg-gray-200 px-3 rounded">Generate</button>
+            </div>
           </div>
         </div>
         <div class="flex gap-2 mt-4">
-          <button @click="updateUser" class="bg-blue-500 text-white px-4 py-2 rounded">Save</button>
-          <button @click="editingUser = null" class="bg-gray-300 px-4 py-2 rounded">Cancel</button>
+          <button @click="updateUser" class="bg-blue-500 text-white px-4 py-2 rounded w-full">Save</button>
+          <button @click="editingUser = null" class="bg-gray-300 px-4 py-2 rounded w-full">Cancel</button>
+          <button @click="deleteUser(editingUser.id)" class="bg-red-500 text-white px-4 py-2 rounded w-full">Delete</button>
         </div>
+        <button @click="resetGender(editingUser.id)" class="bg-yellow-500 text-white px-4 py-2 rounded w-full mt-4">Reset Gender</button>
       </div>
     </div>
   </div>
@@ -115,8 +141,10 @@
         async fetchUsers() {
           const { data, error } = await supabaseClient
             .from("users")
-            .select("id, name, username, role, unique_link, created_at")
+            .select("*")
             .order("created_at", { ascending: false });
+
+          console.log(data);
           if (!error) this.users = data || [];
         },
         async addUser() {
@@ -175,10 +203,26 @@
           
           const { error } = await supabaseClient.from("users").delete().eq("id", id);
           if (!error) {
+            this.editingUser = null;
             this.fetchUsers();
           } else {
             console.error("Error deleting user:", error);
             alert("Error deleting user: " + (error.message || "Unknown error"));
+          }
+        },
+        async resetGender(id) {
+          if (!confirm("Are you sure you want to reset this user's gender?")) return;
+          const { error } = await supabaseClient
+            .from("users")
+            .update({ gender: null })
+            .eq("id", id);
+          if (!error) {
+            if (this.editingUser && this.editingUser.id === id) {
+              this.editingUser.gender = null;
+            }
+            this.fetchUsers();
+          } else {
+            alert("Error resetting gender: " + (error.message || "Unknown error"));
           }
         },
         getRoleClass(role) {

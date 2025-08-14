@@ -33,7 +33,7 @@
       async mounted() {
         // require login
         if (!localStorage.getItem('admin_logged_in')) {
-          window.location.href = '/reading/html/13-gender-reveal/admin/login.html';
+          window.location.href = '/gender-reveal/admin/login.html';
         }
         // Load current gender from Supabase
         const { data, error } = await supabaseClient.from('settings').select('gender').single();
