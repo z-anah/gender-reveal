@@ -67,17 +67,17 @@
           </div>
         </div>
         <div class="mt-3 space-y-3">
-          <div v-if="videos.length" class="space-y-2">
+          <div v-if="videos && videos.length > 0" class="space-y-2">
             <div v-for="video in videos" :key="video.id"
               class="flex items-center justify-between gap-3 p-3 bg-white rounded-md shadow-sm">
               <div class="flex items-center gap-3">
                 <div class="h-12 w-12 bg-gray-100 rounded-md flex items-center justify-center text-xl">🎬</div>
-                <div class="text-sm font-medium truncate">{{ video.name }}</div>
+                <div class="text-sm font-medium truncate">{{ video.username }}</div>
               </div>
               <div class="flex items-center gap-2">
-                <a :href="video.url" download
-                  class="inline-flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white px-3 py-2 rounded-md text-sm">
-                  Download
+                <a :href="video.unique_link"
+                  class="inline-flex items-center gap-2 bg-gray-50 hover:bg-gray-100 text-gray-500 px-3 py-2 rounded-md text-sm">
+                  See more
                 </a>
               </div>
             </div>
@@ -125,10 +125,7 @@
       data() {
         return {
           stats: { boy: 60, girl: 40 },
-          videos: [
-            { id: 1, name: 'User1.mp4', url: '#' },
-            { id: 2, name: 'User2.mp4', url: '#' }
-          ]
+          videos: []
         }
       },
       methods: {
@@ -137,10 +134,29 @@
           window.location.href = '/gender-reveal/admin/login.html';
         }
       },
-      mounted() {
+      async mounted() {
         // require login (set by login.html)
         if (!localStorage.getItem('admin_logged_in')) {
           window.location.href = '/gender-reveal/admin/login.html';
+        }
+        // Fetch and log subfolders of recordings using async/await
+        try {
+          const { data, error } = await supabaseClient.storage
+            .from('videos')
+            .list('recordings');
+          if (error) {
+            console.error('Error listing recordings subfolders:', error);
+          } else {
+            const unique_links = data.filter(item => item.id === null).map(item => item.name);
+            const users_has_uploaded = await supabaseClient
+              .from('users')
+              .select('*')
+              .in('unique_link', unique_links);
+            this.videos = users_has_uploaded.data || [];
+            console.log('Users with uploaded videos:', this.videos);
+          }
+        } catch (err) {
+          console.error('Supabase storage error:', err);
         }
       }
     }).mount('#app');
