@@ -47,11 +47,46 @@
     <div v-else-if="step === 'guess'" class="flex flex-col items-center space-y-6">
       <div class="text-xl font-bold mt-8">Guess the baby's gender!</div>
       <div class="flex w-full space-x-4 mt-4">
-        <button @click="choose('girl')"
-          class="flex-1 py-4 bg-pink-400 text-white rounded-lg text-lg font-bold">Girl</button>
-        <button @click="choose('boy')"
-          class="flex-1 py-4 bg-blue-400 text-white rounded-lg text-lg font-bold">Boy</button>
+        <button @click="choose('girl')" :disabled="choosingGender"
+          :class="choosingGender ? 'opacity-50 cursor-not-allowed' : ''"
+          class="flex-1 py-4 bg-pink-400 text-white rounded-lg text-lg font-bold">
+          <span v-if="choosingGender && chosenGender === 'girl'" class="flex items-center justify-center gap-2">
+            <svg class="h-5 w-5 animate-spin" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-opacity="0.25" stroke-width="4"></circle>
+              <path d="M22 12a10 10 0 00-10-10" stroke="currentColor" stroke-width="4" stroke-linecap="round"></path>
+            </svg>
+            Saving...
+          </span>
+          <span v-else>Girl</span>
+        </button>
+        <button @click="choose('boy')" :disabled="choosingGender"
+          :class="choosingGender ? 'opacity-50 cursor-not-allowed' : ''"
+          class="flex-1 py-4 bg-blue-400 text-white rounded-lg text-lg font-bold">
+          <span v-if="choosingGender && chosenGender === 'boy'" class="flex items-center justify-center gap-2">
+            <svg class="h-5 w-5 animate-spin" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-opacity="0.25" stroke-width="4"></circle>
+              <path d="M22 12a10 10 0 00-10-10" stroke="currentColor" stroke-width="4" stroke-linecap="round"></path>
+            </svg>
+            Saving...
+          </span>
+          <span v-else>Boy</span>
+        </button>
       </div>
+      
+      <!-- Gender choice feedback -->
+      <div v-if="chosenGender && !choosingGender" class="w-full p-4 rounded-lg border-2 border-dashed" 
+           :class="chosenGender === 'girl' ? 'bg-pink-50 border-pink-300 text-pink-700' : 'bg-blue-50 border-blue-300 text-blue-700'">
+        <div class="text-center">
+          <div class="text-2xl mb-2">{{ chosenGender === 'girl' ? '👧' : '👦' }}</div>
+          <div class="font-semibold">You guessed: {{ chosenGender === 'girl' ? 'Girl' : 'Boy' }}!</div>
+          <div class="text-sm opacity-75 mt-1">Great choice! Let's see how others voted...</div>
+        </div>
+      </div>
+      
+      <button v-if="chosenGender && !choosingGender" @click="nextStep" 
+              class="w-full py-3 bg-green-500 hover:bg-green-600 text-white rounded-lg text-xl font-bold transition-colors">
+        Continue to Results
+      </button>
     </div>
     <div v-else-if="step === 'stats'" class="flex flex-col items-center space-y-6">
       <div class="text-xl font-bold mt-8">Guesses so far</div>
@@ -108,6 +143,8 @@
           step: 'permission',
           stats: { boy: 60, girl: 40 },
           reveal: 'girl',
+          chosenGender: null,
+          choosingGender: false,
           // active MediaStream
           stream: null,
           // recording state
@@ -136,9 +173,36 @@
           else if (this.step === 'stats') this.step = 'reveal';
           else if (this.step === 'reveal') this.step = 'end';
         },
-        choose(gender) {
+        async choose(gender) {
+          this.choosingGender = true;
+          this.chosenGender = gender;
+          
+          try {
+            // Save gender to database
+            const { error } = await supabaseClient
+              .from('users')
+              .update({ gender: gender })
+              .eq('unique_link', this.clientId);
+
+            console.log(`User chose ${gender}`);
+              
+            if (error) {
+              console.error('Error saving gender:', error);
+              // Reset on error
+              this.chosenGender = null;
+              alert('Failed to save your choice. Please try again.');
+            }
+          } catch (err) {
+            console.error('Exception saving gender:', err);
+            // Reset on error
+            this.chosenGender = null;
+            alert('Failed to save your choice. Please try again.');
+          } finally {
+            this.choosingGender = false;
+          }
+          
           this.reveal = gender;
-          this.nextStep();
+          // Don't automatically advance to next step - let user click Continue button
         },
         // Called when user clicks "Allow & Continue" — reuse stream if already granted on mount,
         // otherwise request permission and then run countdown/start recording
