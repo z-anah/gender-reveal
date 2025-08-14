@@ -29,7 +29,9 @@
         </div>
         <div class="flex gap-2">
           <input v-model="newUser.unique_link" type="text" placeholder="Unique Link (optional)" class="p-2 border rounded w-full" />
-          <button @click.prevent="generateShortLink(false)" type="button" class="bg-gray-200 px-3 rounded">Generate</button>
+          <button @click.prevent="generateShortLink(false)" type="button" class="bg-gray-200 hover:bg-gray-300 p-2 rounded transition-colors">
+            <i data-lucide="refresh-cw" class="w-5 h-5"></i>
+          </button>
         </div>
         <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded w-full sm:w-auto">Add User</button>
       </form>
@@ -58,6 +60,10 @@
                   <div class="flex gap-1">
                     <button @click="editUser(user)" class="bg-yellow-400 hover:bg-yellow-500 text-white p-2 rounded text-sm transition-colors">
                       <i data-lucide="edit" class="w-4 h-4"></i>
+                    </button>
+                    <button @click="viewUserDetail(user.unique_link)"
+                      class="bg-blue-400 hover:bg-blue-500 text-white p-2 rounded text-sm transition-colors">
+                      <i data-lucide="user" class="w-4 h-4"></i>
                     </button>
                   </div>
                 </td>
@@ -107,7 +113,9 @@
             <label class="block text-xs text-gray-500 mb-1">Unique Link</label>
             <div class="flex gap-2">
               <input v-model="editingUser.unique_link" type="text" class="w-full p-2 border rounded" />
-              <button @click.prevent="generateShortLink(true)" type="button" class="bg-gray-200 px-3 rounded">Generate</button>
+              <button @click.prevent="generateShortLink(true)" type="button" class="bg-gray-200 hover:bg-gray-300 p-2 rounded transition-colors">
+                <i data-lucide="refresh-cw" class="w-5 h-5"></i>
+              </button>
             </div>
           </div>
         </div>
@@ -274,6 +282,9 @@
             }
           }
           alert("Could not generate a unique link. Please try again.");
+        },
+        viewUserDetail(uniqueLink) {
+          window.location.href = `/gender-reveal/admin/user-detail.html?id=${uniqueLink}`;
         },
       },
       mounted() {
