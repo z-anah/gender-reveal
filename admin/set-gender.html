@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Set Baby Gender</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center">
+  <div id="app" class="bg-white rounded-xl shadow-lg p-8 w-full max-w-md">
+    <h1 class="text-2xl font-bold mb-6 text-center">Set Baby's Gender</h1>
+    <div class="flex flex-col gap-4 mb-6">
+      <button @click="setGender('girl')" :class="gender === 'girl' ? 'bg-pink-500 text-white' : 'bg-pink-100 text-pink-600'" class="py-4 rounded-lg font-bold text-xl">Girl</button>
+      <button @click="setGender('boy')" :class="gender === 'boy' ? 'bg-blue-500 text-white' : 'bg-blue-100 text-blue-600'" class="py-4 rounded-lg font-bold text-xl">Boy</button>
+    </div>
+    <div v-if="status" class="text-center text-green-600 font-semibold mb-4">{{ status }}</div>
+    <a href="/gender-reveal/admin/index.html" class="block text-center mt-4 text-blue-500 underline">Back to Dashboard</a>
+  </div>
+  <script>
+    const { createApp } = Vue;
+    const SUPABASE_URL = "https://ojgmqxidefvwxhkgkwbr.supabase.co";
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9qZ21xeGlkZWZ2d3hoa2drd2JyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUxNzA1MTEsImV4cCI6MjA3MDc0NjUxMX0.D73zLIQvXzQ-pofnkVPpci-Q5J97WZ06MWsI6mL9bcM';
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    createApp({
+      data() {
+        return {
+          gender: null,
+          status: ''
+        }
+      },
+      async mounted() {
+        // require login
+        if (!localStorage.getItem('admin_logged_in')) {
+          window.location.href = '/reading/html/13-gender-reveal/admin/login.html';
+        }
+        // Load current gender from Supabase
+        const { data, error } = await supabaseClient.from('settings').select('gender').single();
+        if (data && data.gender) this.gender = data.gender;
+      },
+      methods: {
+        async setGender(gender) {
+          this.gender = gender;
+          const { error } = await supabaseClient.from('settings').update({ gender }).eq('id', 1);
+          if (!error) {
+            this.status = `Gender set to "${gender.toUpperCase()}"`;
+          } else {
+            this.status = 'Error saving gender';
+          }
+        }
+      }
+    }).mount('#app');
+  </script>
+</body>
+</html>

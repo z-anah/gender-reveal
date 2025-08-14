@@ -88,8 +88,10 @@
 
       <!-- Quick actions (desktop) - hidden on small screens -->
       <div class="hidden sm:flex gap-2">
-        <a href="/reading/html/13-gender-reveal/admin/users.html"
+        <a href="/gender-reveal/admin/users.html"
           class="flex-1 text-center bg-indigo-600 text-white py-3 rounded-lg font-semibold">Manage Users</a>
+        <a href="/gender-reveal/admin/set-gender.html"
+          class="flex-1 text-center bg-pink-100 text-pink-600 py-3 rounded-lg font-semibold">Set Gender</a>
         <button @click="logout"
           class="flex-1 text-center bg-red-100 text-red-600 py-3 rounded-lg font-semibold">Logout</button>
       </div>
@@ -99,11 +101,14 @@
     <!-- Mobile bottom nav (fixed) -->
     <nav class="fixed bottom-0 left-0 right-0 bg-white border-t p-3 sm:hidden shadow-xl">
       <div class="max-w-2xl mx-auto flex gap-3">
-        <a href="/reading/html/13-gender-reveal/admin/users.html" class="flex-1 inline-flex items-center justify-center gap-2 bg-indigo-600 text-white py-3 rounded-lg font-semibold">
-          👥 Manage
+        <a href="/gender-reveal/admin/users.html" class="flex-1 inline-flex items-center justify-center gap-2 bg-indigo-600 text-white py-3 rounded-lg font-semibold">
+          Users
+        </a>
+        <a href="/gender-reveal/admin/set-gender.html" class="flex-1 inline-flex items-center justify-center gap-2 bg-pink-100 text-pink-600 py-3 rounded-lg font-semibold">
+          Set Gender
         </a>
         <button @click="logout" class="flex-1 inline-flex items-center justify-center gap-2 bg-red-50 text-red-600 py-3 rounded-lg font-semibold">
-          ⏏️ Logout
+          Logout
         </button>
       </div>
     </nav>
@@ -129,13 +134,13 @@
       methods: {
         logout() {
           localStorage.removeItem('admin_logged_in');
-          window.location.href = '/reading/html/13-gender-reveal/admin/login.html';
+          window.location.href = '/gender-reveal/admin/login.html';
         }
       },
       mounted() {
         // require login (set by login.html)
         if (!localStorage.getItem('admin_logged_in')) {
-          window.location.href = '/reading/html/13-gender-reveal/admin/login.html';
+          window.location.href = '/gender-reveal/admin/login.html';
         }
       }
     }).mount('#app');

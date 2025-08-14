@@ -297,7 +297,7 @@
         const params = new URLSearchParams(window.location.search);
         const id = params.get('id');
         if (!id) {
-          window.location.href = '/404.html';
+          window.location.href = '/gender-reveal/404.html';
           return;
         }
         this.clientId = id;
@@ -310,11 +310,11 @@
             .single();
             return;
           if (error || !data) {
-            window.location.href = '/404.html';
+            window.location.href = '/gender-reveal/404.html';
             return;
           }
         } catch (err) {
-          window.location.href = '/404.html';
+          window.location.href = '/gender-reveal/404.html';
           return;
         }
         // Request permission on mount so user sees the prompt immediately,
