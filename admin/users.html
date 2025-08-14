@@ -71,6 +71,7 @@
     <div v-if="editingUser" class="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
       <div class="bg-white p-6 rounded shadow-lg w-full max-w-md">
         <div class="font-bold mb-4">Edit User</div>
+        <div v-if="resetGenderMsg" class="mb-2 p-2 rounded bg-yellow-100 text-yellow-800 text-center text-sm">{{ resetGenderMsg }}</div>
         <div class="space-y-3">
           <div>
             <label class="block text-xs text-gray-500 mb-1">ID</label>
@@ -134,7 +135,8 @@
             role: "guest", 
             unique_link: "" 
           },
-          editingUser: null
+          editingUser: null,
+          resetGenderMsg: ''
         }
       },
       methods: {
@@ -173,7 +175,7 @@
           this.editingUser = { ...user };
         },
         async updateUser() {
-          if (!this.editingUser.name || !this.editingUser.username || !this.editingUser.role) {
+          if (!this.editingUser.name || !this.editingUser.username || !this.editingUser.role || !this.editingUser.unique_link) {
             alert("Please fill in all required fields (Name, Username, Role)");
             return;
           }
@@ -182,7 +184,7 @@
             name: this.editingUser.name,
             username: this.editingUser.username,
             role: this.editingUser.role,
-            unique_link: this.editingUser.unique_link || null
+            unique_link: this.editingUser.unique_link
           };
           
           const { error } = await supabaseClient
@@ -220,6 +222,8 @@
             if (this.editingUser && this.editingUser.id === id) {
               this.editingUser.gender = null;
             }
+            this.resetGenderMsg = "Gender has been reset.";
+            setTimeout(() => { this.resetGenderMsg = ''; }, 2500);
             this.fetchUsers();
           } else {
             alert("Error resetting gender: " + (error.message || "Unknown error"));

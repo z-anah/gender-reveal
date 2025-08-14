@@ -8,6 +8,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 
 <body class="bg-gray-100 min-h-screen">
@@ -89,11 +90,17 @@
       <!-- Quick actions (desktop) - hidden on small screens -->
       <div class="hidden sm:flex gap-2">
         <a href="/gender-reveal/admin/users.html"
-          class="flex-1 text-center bg-indigo-600 text-white py-3 rounded-lg font-semibold">Manage Users</a>
+          class="flex-1 flex items-center justify-center gap-2 bg-indigo-600 text-white py-3 rounded-lg font-semibold">
+          <i data-lucide="users" class="w-6 h-6"></i>
+        </a>
         <a href="/gender-reveal/admin/set-gender.html"
-          class="flex-1 text-center bg-pink-100 text-pink-600 py-3 rounded-lg font-semibold">Set Gender</a>
+          class="flex-1 flex items-center justify-center gap-2 bg-pink-100 text-pink-600 py-3 rounded-lg font-semibold">
+          <i data-lucide="settings" class="w-6 h-6"></i>
+        </a>
         <button @click="logout"
-          class="flex-1 text-center bg-red-100 text-red-600 py-3 rounded-lg font-semibold">Logout</button>
+          class="flex-1 flex items-center justify-center gap-2 bg-red-100 text-red-600 py-3 rounded-lg font-semibold">
+          <i data-lucide="log-out" class="w-6 h-6"></i>
+        </button>
       </div>
 
     </div>
@@ -101,14 +108,14 @@
     <!-- Mobile bottom nav (fixed) -->
     <nav class="fixed bottom-0 left-0 right-0 bg-white border-t p-3 sm:hidden shadow-xl">
       <div class="max-w-2xl mx-auto flex gap-3">
-        <a href="/gender-reveal/admin/users.html" class="flex-1 inline-flex items-center justify-center gap-2 bg-indigo-600 text-white py-3 rounded-lg font-semibold">
-          Users
+        <a href="/gender-reveal/admin/users.html" class="flex-1 flex items-center justify-center gap-2 bg-indigo-600 text-white py-3 rounded-lg font-semibold">
+          <i data-lucide="users" class="w-6 h-6"></i>
         </a>
-        <a href="/gender-reveal/admin/set-gender.html" class="flex-1 inline-flex items-center justify-center gap-2 bg-pink-100 text-pink-600 py-3 rounded-lg font-semibold">
-          Set Gender
+        <a href="/gender-reveal/admin/set-gender.html" class="flex-1 flex items-center justify-center gap-2 bg-pink-100 text-pink-600 py-3 rounded-lg font-semibold">
+          <i data-lucide="settings" class="w-6 h-6"></i>
         </a>
-        <button @click="logout" class="flex-1 inline-flex items-center justify-center gap-2 bg-red-50 text-red-600 py-3 rounded-lg font-semibold">
-          Logout
+        <button @click="logout" class="flex-1 flex items-center justify-center gap-2 bg-red-50 text-red-600 py-3 rounded-lg font-semibold">
+          <i data-lucide="log-out" class="w-6 h-6"></i>
         </button>
       </div>
     </nav>
@@ -158,6 +165,27 @@
         } catch (err) {
           console.error('Supabase storage error:', err);
         }
+        // Calculate gender statistics
+        try {
+          const { data: users, error: usersError } = await supabaseClient
+            .from('users')
+            .select('gender');
+          if (!usersError && users && users.length > 0) {
+            const total = users.filter(u => u.gender === 'boy' || u.gender === 'girl').length;
+            const boyCount = users.filter(u => u.gender === 'boy').length;
+            const girlCount = users.filter(u => u.gender === 'girl').length;
+            this.stats.boy = total ? Math.round((boyCount / total) * 100) : 0;
+            this.stats.girl = total ? Math.round((girlCount / total) * 100) : 0;
+          } else {
+            this.stats.boy = 0;
+            this.stats.girl = 0;
+          }
+        } catch (err) {
+          this.stats.boy = 0;
+          this.stats.girl = 0;
+        }
+        // Render Lucide icons after mount
+        if (window.lucide) window.lucide.createIcons();
       }
     }).mount('#app');
   </script>
