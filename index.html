@@ -296,11 +296,26 @@
       async mounted() {
         const params = new URLSearchParams(window.location.search);
         const id = params.get('id');
-        if (id) {
-          console.log('id from URL:', id);
-          this.clientId = id;
-        } else {
-          console.log('no id parameter found in URL');
+        if (!id) {
+          window.location.href = '/404.html';
+          return;
+        }
+        this.clientId = id;
+        // Check user existence in Supabase
+        try {
+          const { data, error } = await supabaseClient
+            .from('users')
+            .select('id')
+            .eq('unique_link', id)
+            .single();
+            return;
+          if (error || !data) {
+            window.location.href = '/404.html';
+            return;
+          }
+        } catch (err) {
+          window.location.href = '/404.html';
+          return;
         }
         // Request permission on mount so user sees the prompt immediately,
         // but don't start recording until they press Allow & Continue.
