@@ -10,164 +10,215 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 </head>
 
-<body class="bg-gray-100 flex items-center justify-center min-h-screen">
-  <div id="app" class="w-full max-w-md mx-auto p-4 bg-white rounded-xl shadow-lg">
+<body class="bg-gray-50 flex items-center justify-center min-h-screen p-4">
+  <div id="app" class="w-full max-w-md mx-auto bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden">
     <!-- Upload feedback banner -->
-    <div v-if="uploadSuccess" class="mb-3 p-3 rounded-lg bg-green-50 border border-green-200 text-green-800 flex items-center justify-between">
+    <div v-if="uploadSuccess" class="p-4 bg-emerald-50 border-b border-emerald-100 text-emerald-800 flex items-center justify-between">
       <div>
-        <strong class="block">Upload successful</strong>
-        <a :href="uploadedUrl" target="_blank" class="underline text-sm">View uploaded video</a>
+        <strong class="block text-sm font-semibold">Upload successful</strong>
+        <a :href="uploadedUrl" target="_blank" class="underline text-xs hover:text-emerald-900">View uploaded video</a>
       </div>
-      <button @click="uploadSuccess = false" class="ml-4 text-sm px-2 py-1 bg-green-100 rounded">Dismiss</button>
+      <button @click="uploadSuccess = false" class="text-xs px-3 py-1 bg-emerald-100 hover:bg-emerald-200 rounded-lg font-medium transition-colors">Dismiss</button>
     </div>
 
     <!-- Uploading indicator -->
-    <div v-if="uploadLoading" class="mb-3 p-2 rounded-lg bg-yellow-50 border border-yellow-200 text-yellow-800 flex items-center gap-3">
-      <svg class="h-5 w-5 animate-spin text-yellow-600" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <div v-if="uploadLoading" class="p-4 bg-amber-50 border-b border-amber-100 text-amber-800 flex items-center gap-3">
+      <svg class="h-4 w-4 animate-spin text-amber-600" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
         <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-opacity="0.25" stroke-width="4"></circle>
         <path d="M22 12a10 10 0 00-10-10" stroke="currentColor" stroke-width="4" stroke-linecap="round"></path>
       </svg>
-      <div class="text-sm">Uploading video…</div>
+      <div class="text-sm font-medium">Uploading video…</div>
     </div>
 
     <!-- Countdown overlay (3..2..1) -->
-    <div v-if="showCountdown" class="absolute inset-0 bg-black/60 z-50 flex items-center justify-center pointer-events-none">
-      <div class="text-white text-6xl sm:text-8xl font-extrabold animate-pulse">
+    <div v-if="showCountdown" class="absolute inset-0 bg-gray-900/80 z-50 flex items-center justify-center pointer-events-none rounded-2xl">
+      <div class="text-white text-6xl sm:text-8xl font-bold animate-pulse">
         {{ countdown }}
       </div>
     </div>
 
-    <div v-if="step === 'permission'" class="flex flex-col items-center space-y-6">
-      <div class="text-4xl">📹 🎙</div>
-      <div class="text-lg font-semibold">We’ll record your reaction and voice during this fun reveal!</div>
-      <div class="text-sm text-gray-500">Recording will begin automatically after you allow camera access.</div>
-      <button @click="allowAndStart" class="w-full py-3 bg-blue-500 text-white rounded-lg text-xl font-bold">Allow &
-        Continue</button>
-    </div>
-    <div v-else-if="step === 'guess'" class="flex flex-col items-center space-y-6">
-      <div class="text-xl font-bold mt-8">Guess the baby's gender!</div>
-      <div class="flex w-full space-x-4 mt-4">
-        <button @click="choose('girl')" :disabled="choosingGender"
-          :class="choosingGender ? 'opacity-50 cursor-not-allowed' : ''"
-          class="flex-1 py-4 bg-pink-400 text-white rounded-lg text-lg font-bold">
-          <span v-if="choosingGender && chosenGender === 'girl'" class="flex items-center justify-center gap-2">
-            <svg class="h-5 w-5 animate-spin" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-opacity="0.25" stroke-width="4"></circle>
-              <path d="M22 12a10 10 0 00-10-10" stroke="currentColor" stroke-width="4" stroke-linecap="round"></path>
-            </svg>
-            Saving...
-          </span>
-          <span v-else>Girl</span>
-        </button>
-        <button @click="choose('boy')" :disabled="choosingGender"
-          :class="choosingGender ? 'opacity-50 cursor-not-allowed' : ''"
-          class="flex-1 py-4 bg-blue-400 text-white rounded-lg text-lg font-bold">
-          <span v-if="choosingGender && chosenGender === 'boy'" class="flex items-center justify-center gap-2">
-            <svg class="h-5 w-5 animate-spin" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-opacity="0.25" stroke-width="4"></circle>
-              <path d="M22 12a10 10 0 00-10-10" stroke="currentColor" stroke-width="4" stroke-linecap="round"></path>
-            </svg>
-            Saving...
-          </span>
-          <span v-else>Boy</span>
+    <!-- Main content area -->
+    <div class="p-6">
+      <div v-if="step === 'permission'" class="flex flex-col items-center space-y-8 py-8">
+        <div class="text-5xl">📹</div>
+        <div class="text-center space-y-3">
+          <h1 class="text-2xl font-bold text-gray-900">Welcome to the Gender Reveal!</h1>
+          <p class="text-gray-600 leading-relaxed">We'll record your reaction and voice during this fun reveal experience.</p>
+          <p class="text-sm text-gray-500">Recording will begin automatically after you allow camera access.</p>
+        </div>
+        <button @click="allowAndStart" class="w-full py-4 bg-gray-900 hover:bg-gray-800 text-white rounded-xl text-lg font-semibold transition-all duration-200 shadow-lg hover:shadow-xl">
+          Allow Camera & Continue
         </button>
       </div>
-      
-      <!-- Gender choice feedback -->
-      <div v-if="chosenGender && !choosingGender" class="w-full p-4 rounded-lg border-2 border-dashed" 
-           :class="chosenGender === 'girl' ? 'bg-pink-50 border-pink-300 text-pink-700' : 'bg-blue-50 border-blue-300 text-blue-700'">
-        <div class="text-center">
-          <div class="text-2xl mb-2">{{ chosenGender === 'girl' ? '👧' : '👦' }}</div>
-          <div class="font-semibold">You guessed: {{ chosenGender === 'girl' ? 'Girl' : 'Boy' }}!</div>
-          <div class="text-sm opacity-75 mt-1">Great choice! Let's see how others voted...</div>
-        </div>
-      </div>
-      
-      <button v-if="chosenGender && !choosingGender" @click="nextStep" 
-              class="w-full py-3 bg-green-500 hover:bg-green-600 text-white rounded-lg text-xl font-bold transition-colors">
-        Continue to Results
-      </button>
-    </div>
-    <div v-else-if="step === 'stats'" class="flex flex-col items-center space-y-6">
-      <div class="text-xl font-bold mt-8">Guesses so far</div>
-      <div class="flex w-full justify-around mt-4">
-        <div class="flex flex-col items-center">
-          <span class="text-blue-500 font-bold text-2xl">{{ stats.boy }}%</span>
-          <span class="text-sm">Boy</span>
-        </div>
-        <div class="flex flex-col items-center">
-          <span class="text-pink-500 font-bold text-2xl">{{ stats.girl }}%</span>
-          <span class="text-sm">Girl</span>
-        </div>
-      </div>
-      <button @click="startSuspenseReveal" :disabled="suspenseActive" 
-              class="w-full py-3 bg-green-500 hover:bg-green-600 text-white rounded-lg text-xl font-bold mt-6 transition-colors disabled:opacity-50">
-        {{ suspenseActive ? 'Revealing...' : 'See Reveal' }}
-      </button>
-    </div>
-    <div v-else-if="step === 'suspense'" class="flex flex-col items-center space-y-6">
-      <div class="text-xl font-bold mt-8 text-center animate-pulse" 
-           :class="suspenseTextColor">{{ suspenseText }}</div>
-      
-      <!-- Drumroll indicator -->
-      <div v-if="showDrumroll" class="text-center animate-bounce">
-        <div class="text-4xl">🥁</div>
-        <div class="text-sm text-gray-500 mt-1">*drumroll*</div>
-      </div>
-      
-      <!-- Suspenseful options display -->
-      <div class="w-full space-y-4">
-        <div v-show="showBoyOption" 
-             class="w-full p-6 rounded-lg text-center transition-all duration-1000 transform"
-             :class="boyOptionActive ? 'bg-blue-100 border-2 border-blue-300 scale-105 shadow-lg animate-pulse' : 'bg-gray-100 opacity-30 scale-95'">
-          <div class="text-4xl mb-2">👦</div>
-          <div class="text-2xl font-bold text-blue-600">BOY?</div>
-          <div v-if="boyOptionActive" class="text-sm text-blue-500 mt-1 animate-pulse">Could it be?</div>
+
+      <div v-else-if="step === 'guess'" class="flex flex-col items-center space-y-8 py-6">
+        <div class="text-center space-y-2">
+          <h2 class="text-2xl font-bold text-gray-900">Make Your Guess!</h2>
+          <p class="text-gray-600">What do you think the baby will be?</p>
         </div>
         
-        <div v-show="showGirlOption" 
-             class="w-full p-6 rounded-lg text-center transition-all duration-1000 transform"
-             :class="girlOptionActive ? 'bg-pink-100 border-2 border-pink-300 scale-105 shadow-lg animate-pulse' : 'bg-gray-100 opacity-30 scale-95'">
-          <div class="text-4xl mb-2">👧</div>
-          <div class="text-2xl font-bold text-pink-600">GIRL?</div>
-          <div v-if="girlOptionActive" class="text-sm text-pink-500 mt-1 animate-pulse">Or maybe this?</div>
+        <div class="flex w-full space-x-4">
+          <button @click="choose('girl')" :disabled="choosingGender"
+            :class="choosingGender ? 'opacity-50 cursor-not-allowed' : 'hover:scale-105 hover:shadow-lg'"
+            class="flex-1 py-6 bg-pink-300 hover:bg-pink-400 text-white rounded-xl text-xl font-bold transition-all duration-200 shadow-md">
+            <span v-if="choosingGender && chosenGender === 'girl'" class="flex items-center justify-center gap-2">
+              <svg class="h-5 w-5 animate-spin" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-opacity="0.25" stroke-width="4"></circle>
+                <path d="M22 12a10 10 0 00-10-10" stroke="currentColor" stroke-width="4" stroke-linecap="round"></path>
+              </svg>
+              Saving...
+            </span>
+            <span v-else class="flex flex-col items-center gap-2">
+              <span class="text-2xl">👧</span>
+              Girl
+            </span>
+          </button>
+          <button @click="choose('boy')" :disabled="choosingGender"
+            :class="choosingGender ? 'opacity-50 cursor-not-allowed' : 'hover:scale-105 hover:shadow-lg'"
+            class="flex-1 py-6 bg-blue-300 hover:bg-blue-400 text-white rounded-xl text-xl font-bold transition-all duration-200 shadow-md">
+            <span v-if="choosingGender && chosenGender === 'boy'" class="flex items-center justify-center gap-2">
+              <svg class="h-5 w-5 animate-spin" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-opacity="0.25" stroke-width="4"></circle>
+                <path d="M22 12a10 10 0 00-10-10" stroke="currentColor" stroke-width="4" stroke-linecap="round"></path>
+              </svg>
+              Saving...
+            </span>
+            <span v-else class="flex flex-col items-center gap-2">
+              <span class="text-2xl">👦</span>
+              Boy
+            </span>
+          </button>
+        </div>
+        
+        <!-- Gender choice feedback -->
+        <div v-if="chosenGender && !choosingGender" class="w-full p-6 rounded-xl border-2 border-dashed transition-all duration-300" 
+             :class="chosenGender === 'girl' ? 'bg-pink-50 border-pink-200 text-pink-700' : 'bg-blue-50 border-blue-200 text-blue-700'">
+          <div class="text-center space-y-3">
+            <div class="text-3xl">{{ chosenGender === 'girl' ? '👧' : '👦' }}</div>
+            <div class="font-bold text-lg">You guessed: {{ chosenGender === 'girl' ? 'Girl' : 'Boy' }}!</div>
+            <div class="text-sm opacity-80">Great choice! Let's see how others voted...</div>
+          </div>
+        </div>
+        
+        <button v-if="chosenGender && !choosingGender" @click="nextStep" 
+                class="w-full py-4 bg-gray-900 hover:bg-gray-800 text-white rounded-xl text-lg font-semibold transition-all duration-200 shadow-lg hover:shadow-xl">
+          Continue to Results
+        </button>
+      </div>
+
+      <div v-else-if="step === 'stats'" class="flex flex-col items-center space-y-8 py-6">
+        <div class="text-center space-y-2">
+          <h2 class="text-2xl font-bold text-gray-900">Current Predictions</h2>
+          <p class="text-gray-600">Here's what everyone is thinking...</p>
+        </div>
+        
+        <div class="w-full bg-gray-50 rounded-xl p-6">
+          <div class="flex justify-around">
+            <div class="flex flex-col items-center space-y-2">
+              <div class="text-blue-400 text-3xl font-bold">{{ stats.boy }}%</div>
+              <div class="text-gray-700 font-medium flex items-center gap-1">
+                <span class="text-lg">👦</span>
+                Boy
+              </div>
+            </div>
+            <div class="w-px bg-gray-200"></div>
+            <div class="flex flex-col items-center space-y-2">
+              <div class="text-pink-400 text-3xl font-bold">{{ stats.girl }}%</div>
+              <div class="text-gray-700 font-medium flex items-center gap-1">
+                <span class="text-lg">👧</span>
+                Girl
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <button @click="startSuspenseReveal" :disabled="suspenseActive" 
+                class="w-full py-4 bg-gray-900 hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl text-lg font-semibold transition-all duration-200 shadow-lg hover:shadow-xl">
+          {{ suspenseActive ? 'Revealing...' : '🎉 Ready for the Big Reveal?' }}
+        </button>
+      </div>
+
+      <div v-else-if="step === 'suspense'" class="flex flex-col items-center space-y-8 py-6">
+        <div class="text-center">
+          <h2 class="text-xl font-bold animate-pulse text-center" :class="suspenseTextColor">
+            {{ suspenseText }}
+          </h2>
+        </div>
+        
+        <!-- Drumroll indicator -->
+        <div v-if="showDrumroll" class="text-center animate-bounce">
+          <div class="text-5xl">🥁</div>
+          <div class="text-sm text-gray-500 mt-2 font-medium">*drumroll intensifies*</div>
+        </div>
+        
+        <!-- Suspenseful options display -->
+        <div class="w-full space-y-4">
+          <div v-show="showBoyOption" 
+               class="w-full p-8 rounded-xl text-center transition-all duration-1000 transform border-2"
+               :class="boyOptionActive ? 'bg-blue-50 border-blue-300 scale-105 shadow-lg animate-pulse' : 'bg-gray-100 border-gray-200 opacity-30 scale-95'">
+            <div class="text-4xl mb-3">👦</div>
+            <div class="text-2xl font-bold text-blue-400">BOY?</div>
+            <div v-if="boyOptionActive" class="text-sm text-blue-400 mt-2 animate-pulse font-medium">Could it be?</div>
+          </div>
+          
+          <div v-show="showGirlOption" 
+               class="w-full p-8 rounded-xl text-center transition-all duration-1000 transform border-2"
+               :class="girlOptionActive ? 'bg-pink-50 border-pink-300 scale-105 shadow-lg animate-pulse' : 'bg-gray-100 border-gray-200 opacity-30 scale-95'">
+            <div class="text-4xl mb-3">👧</div>
+            <div class="text-2xl font-bold text-pink-400">GIRL?</div>
+            <div v-if="girlOptionActive" class="text-sm text-pink-400 mt-2 animate-pulse font-medium">Or maybe this?</div>
+          </div>
+        </div>
+        
+        <!-- Tension building elements -->
+        <div v-if="showTensionDots" class="flex justify-center space-x-2">
+          <div class="w-3 h-3 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0s;"></div>
+          <div class="w-3 h-3 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0.2s;"></div>
+          <div class="w-3 h-3 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0.4s;"></div>
         </div>
       </div>
-      
-      <!-- Tension building elements -->
-      <div v-if="showTensionDots" class="flex justify-center space-x-2">
-        <div class="w-3 h-3 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0s;"></div>
-        <div class="w-3 h-3 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0.2s;"></div>
-        <div class="w-3 h-3 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0.4s;"></div>
-      </div>
-    </div>
-    <div v-else-if="step === 'reveal'" class="flex flex-col items-center space-y-6">
-      <div class="relative w-full flex flex-col items-center mt-8">
-        <div v-if="reveal === 'girl'" class="text-pink-500 text-4xl sm:text-6xl font-bold mb-4 animate-bounce">
-          🎉 IT'S A GIRL! 🎉
+
+      <div v-else-if="step === 'reveal'" class="flex flex-col items-center space-y-8 py-8">
+        <div class="text-center">
+          <div v-if="reveal === 'girl'" class="space-y-4">
+            <div class="text-pink-400 text-4xl sm:text-6xl font-bold animate-bounce">
+              🎉 IT'S A GIRL! 🎉
+            </div>
+            <div class="text-2xl text-pink-400 font-semibold">Congratulations!</div>
+          </div>
+          <div v-else class="space-y-4">
+            <div class="text-blue-400 text-4xl sm:text-6xl font-bold animate-bounce">
+              🎉 IT'S A BOY! 🎉
+            </div>
+            <div class="text-2xl text-blue-400 font-semibold">Congratulations!</div>
+          </div>
         </div>
-        <div v-else class="text-blue-500 text-4xl sm:text-6xl font-bold mb-4 animate-bounce">
-          🎉 IT'S A BOY! 🎉
+        <button @click="finishAndUpload"
+          class="w-full py-4 bg-gray-900 hover:bg-gray-800 text-white rounded-xl text-lg font-semibold transition-all duration-200 shadow-lg hover:shadow-xl">
+          Finish & Save Recording
+        </button>
+      </div>
+
+      <div v-else-if="step === 'end'" class="flex flex-col items-center space-y-8 py-12">
+        <div class="text-6xl">🎊</div>
+        <div class="text-center space-y-3">
+          <h2 class="text-2xl font-bold text-gray-900">Thank You!</h2>
+          <p class="text-gray-600">Thanks for being part of this special moment!</p>
         </div>
       </div>
-      <button @click="finishAndUpload"
-        class="w-full py-3 bg-gray-800 text-white rounded-lg text-xl font-bold mt-6">Finish</button>
-    </div>
-    <div v-else-if="step === 'end'" class="flex flex-col items-center space-y-6">
-      <div class="text-3xl mt-8">🎊</div>
-      <div class="text-xl font-bold">Thanks for participating!</div>
     </div>
 
     <!-- persistent top-right cam: visible when stream is available -->
-    <div class="fixed top-4 right-4 z-50" v-show="stream">
+    <div class="fixed top-6 right-6 z-50" v-show="stream">
       <div class="flex flex-col items-center space-y-2">
-        <div id="camHolder" class="w-20 h-20 bg-gray-200 rounded-full overflow-hidden flex items-center justify-center shadow-lg">
+        <div id="camHolder" class="w-20 h-20 bg-gray-200 rounded-2xl overflow-hidden flex items-center justify-center shadow-lg border-2 border-white">
           <video id="miniCam" autoplay playsinline muted class="object-cover w-full h-full"></video>
         </div>
-        <div class="text-xs text-gray-600 mt-1">{{ uploadStatus }}</div>
+        <div class="text-xs text-gray-600 bg-white px-2 py-1 rounded-lg shadow-sm font-medium">{{ uploadStatus }}</div>
       </div>
     </div>
   </div>
+
   <script>
     const { createApp } = Vue;
     // Supabase config — reuse your project values
@@ -247,16 +298,16 @@
           await this.delay(2500);
           
           this.suspenseText = "Are you ready to find out?";
-          this.suspenseTextColor = 'text-purple-600';
+          this.suspenseTextColor = 'text-gray-900';
           await this.delay(2000);
           
           this.suspenseText = "Take a deep breath...";
-          this.suspenseTextColor = 'text-blue-600';
+          this.suspenseTextColor = 'text-gray-800';
           await this.delay(2000);
           
           // Step 2: Building more tension
           this.suspenseText = "The baby is...";
-          this.suspenseTextColor = 'text-red-600';
+          this.suspenseTextColor = 'text-gray-900';
           this.showDrumroll = true;
           await this.delay(3000);
           
@@ -267,7 +318,7 @@
           
           // Step 3: Show Boy option with more drama
           this.suspenseText = "BOY?";
-          this.suspenseTextColor = 'text-blue-700';
+          this.suspenseTextColor = 'text-blue-400';
           this.showBoyOption = true;
           this.boyOptionActive = true;
           await this.delay(2500);
@@ -279,24 +330,24 @@
           
           // Step 4: Show Girl option with suspense
           this.suspenseText = "What about... a GIRL?";
-          this.suspenseTextColor = 'text-pink-700';
+          this.suspenseTextColor = 'text-pink-400';
           this.showGirlOption = true;
           this.girlOptionActive = true;
           await this.delay(2500);
           
           this.suspenseText = "Or... wait for it...";
-          this.suspenseTextColor = 'text-purple-600';
+          this.suspenseTextColor = 'text-gray-700';
           this.girlOptionActive = false;
           await this.delay(1500);
           
           // Step 5: Final dramatic build-up
           this.suspenseText = "The moment of truth is here!";
-          this.suspenseTextColor = 'text-red-700';
+          this.suspenseTextColor = 'text-gray-900';
           this.showTensionDots = true;
           await this.delay(3000);
           
           this.suspenseText = "And the answer is...";
-          this.suspenseTextColor = 'text-black';
+          this.suspenseTextColor = 'text-gray-900';
           this.showTensionDots = false;
           await this.delay(2000);
           
@@ -324,8 +375,6 @@
               .update({ gender: gender })
               .eq('unique_link', this.clientId);
 
-            console.log(`User chose ${gender}`);
-              
             if (error) {
               console.error('Error saving gender:', error);
               // Reset on error

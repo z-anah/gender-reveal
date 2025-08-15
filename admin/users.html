@@ -164,8 +164,6 @@
             .from("users")
             .select("*")
             .order("created_at", { ascending: false });
-
-          console.log(data);
           if (!error) this.users = data || [];
         },
         async addUser() {

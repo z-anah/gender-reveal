@@ -151,7 +151,6 @@
               .select('*')
               .in('unique_link', unique_links);
             this.videos = users_has_uploaded.data || [];
-            console.log('Users with uploaded videos:', this.videos);
           }
         } catch (err) {
           console.error('Supabase storage error:', err);

@@ -229,6 +229,7 @@
               
             if (!videoError && videoData) {
               this.videos = videoData.filter(file => file.id !== null); // Filter out folder entries
+              this.videos = this.videos.filter(file => file.metadata && file.metadata.size > 0); // Ensure size is greater than 0
             }
             
           } catch (err) {
