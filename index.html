@@ -230,7 +230,7 @@
       data() {
         return {
           step: 'permission',
-          stats: { boy: 60, girl: 40 },
+          stats: { boy: 0, girl: 0 },
           reveal: 'girl',
           chosenGender: null,
           choosingGender: false,
@@ -272,6 +272,36 @@
           else if (this.step === 'stats') this.step = 'suspense';
           else if (this.step === 'suspense') this.step = 'reveal';
           else if (this.step === 'reveal') this.step = 'end';
+          
+          // Load stats when entering the stats step
+          if (this.step === 'stats') {
+            this.loadGenderStats();
+          }
+        },
+        async loadGenderStats() {
+          try {
+            const { data: users, error } = await supabaseClient
+              .from('users')
+              .select('gender')
+              .not('gender', 'is', null);
+            
+            if (!error && users && users.length > 0) {
+              const total = users.length;
+              const boyCount = users.filter(u => u.gender === 'boy').length;
+              const girlCount = users.filter(u => u.gender === 'girl').length;
+              
+              this.stats.boy = total ? Math.round((boyCount / total) * 100) : 0;
+              this.stats.girl = total ? Math.round((girlCount / total) * 100) : 0;
+            } else {
+              this.stats.boy = 50;
+              this.stats.girl = 50;
+            }
+          } catch (err) {
+            console.error('Error loading gender stats:', err);
+            // Fallback to default values
+            this.stats.boy = 50;
+            this.stats.girl = 50;
+          }
         },
         async startSuspenseReveal() {
           this.suspenseActive = true;

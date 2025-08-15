@@ -119,7 +119,7 @@
     createApp({
       data() {
         return {
-          stats: { boy: 60, girl: 40 },
+          stats: { boy: 0, girl: 0 },
           videos: []
         }
       },
@@ -130,6 +130,30 @@
         },
         viewUserDetail(uniqueLink) {
           window.location.href = `/gender-reveal/admin/user-detail.html?id=${uniqueLink}`;
+        },
+        async loadGenderStats() {
+          try {
+            const { data: users, error } = await supabaseClient
+              .from('users')
+              .select('gender')
+              .not('gender', 'is', null);
+            
+            if (!error && users && users.length > 0) {
+              const total = users.length;
+              const boyCount = users.filter(u => u.gender === 'boy').length;
+              const girlCount = users.filter(u => u.gender === 'girl').length;
+              
+              this.stats.boy = total ? Math.round((boyCount / total) * 100) : 0;
+              this.stats.girl = total ? Math.round((girlCount / total) * 100) : 0;
+            } else {
+              this.stats.boy = 0;
+              this.stats.girl = 0;
+            }
+          } catch (err) {
+            console.error('Error loading gender stats:', err);
+            this.stats.boy = 0;
+            this.stats.girl = 0;
+          }
         }
       },
       async mounted() {
@@ -155,25 +179,8 @@
         } catch (err) {
           console.error('Supabase storage error:', err);
         }
-        // Calculate gender statistics
-        try {
-          const { data: users, error: usersError } = await supabaseClient
-            .from('users')
-            .select('gender');
-          if (!usersError && users && users.length > 0) {
-            const total = users.filter(u => u.gender === 'boy' || u.gender === 'girl').length;
-            const boyCount = users.filter(u => u.gender === 'boy').length;
-            const girlCount = users.filter(u => u.gender === 'girl').length;
-            this.stats.boy = total ? Math.round((boyCount / total) * 100) : 0;
-            this.stats.girl = total ? Math.round((girlCount / total) * 100) : 0;
-          } else {
-            this.stats.boy = 0;
-            this.stats.girl = 0;
-          }
-        } catch (err) {
-          this.stats.boy = 0;
-          this.stats.girl = 0;
-        }
+        // Load gender statistics
+        await this.loadGenderStats();
         // Render Lucide icons after mount
         if (window.lucide) window.lucide.createIcons();
       }
